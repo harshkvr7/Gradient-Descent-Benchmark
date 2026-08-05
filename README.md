@@ -146,32 +146,6 @@ GPU Trained Result: w = 3.50161, b = 1.98935 | Final Loss: 2.83111e-05
 
 ---
 
-## 🔍 Performance Analysis & Architectural Insights
-
-### Why is the Speedup 1.80x?
-
-While a **1.80x speedup** demonstrates clear GPU acceleration over the CPU baseline, raw compute capability on modern CUDA hardware would typically suggest much higher gains for a $1,000,000$-sample workload. Several architectural factors explain the current performance profile:
-
-1. **Global Memory Contention (`atomicAdd`)**:
-   - In the baseline kernel, **$1,000,000$ threads** simultaneously attempt atomic additions to only two global memory addresses (`d_grad_w` and `d_grad_b`).
-   - This heavy serialization at the L2 cache / global memory controller creates a severe memory contention bottleneck that dominates kernel execution time.
-
-2. **Per-Epoch Host-Device Synchronization**:
-   - At the end of every epoch, the program executes `cudaMemcpyDeviceToHost` to read `d_grad_w` and `d_grad_b` back to CPU memory and performs parameter updates on the host.
-   - For $1,000$ epochs, this introduces **$1,000$ synchronization points** and kernel launch overheads.
-
-### Optimization Roadmap (Next Steps)
-
-To unlock **10x–50x speedups** on this dataset, consider implementing the following CUDA optimizations:
-
-- **Shared Memory Reduction / Warp-Level Primitives**:
-  - Perform a tree-reduction using CUDA shared memory (`__shared__`) or Warp Shuffle intrinsics (`__shfl_down_sync`) within each thread block.
-  - Each block emits only *one* atomic update to global memory, reducing atomic serialization from **1,000,000 operations** to just **~3,907 operations** ($1,000,000 / 256$).
-- **In-Kernel Parameter Update**:
-  - Keep parameters $w$ and $b$ on the GPU and update them in a lightweight single-thread kernel (or via CUDA cooperative groups) to eliminate the $1,000$ host-device transfers and synchronization barriers.
-
----
-
 ## 🛠 Prerequisites & Build Instructions
 
 ### Requirements
@@ -196,13 +170,4 @@ Execute the compiled binary directly:
 ./linear_regression_cuda
 ```
 
-### Expected Flow
-1. Generates $1,000,000$ synthetic data points matching $y = 3.5x + 2.0$.
-2. Runs 1,000 epochs of Gradient Descent on the **CPU** and records elapsed time.
-3. Allocates GPU device memory, copies dataset to device, and runs 1,000 epochs using **CUDA kernels**.
-4. Prints a comprehensive performance and convergence comparison summary.
-
 ---
-
-## 📝 License
-This project is open-sourced under the [MIT License](LICENSE). Feel free to use, modify, and extend the repository for educational or research purposes.
