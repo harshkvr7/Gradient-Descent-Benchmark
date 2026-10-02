@@ -37,17 +37,20 @@ This project contrasts:
 The CPU implementation (`computeGradientsCPU`) evaluates gradients sequentially over an O($N$) loop:
 ```cpp
 void computeGradientsCPU(const std::vector<float>& x, const std::vector<float>& y,
-                         float w, float b, float& grad_w, float& grad_b) {
+                         float w, float b, float& grad_w, float& grad_b) 
+{
     int N = x.size();
     float sum_dw = 0.0f;
     float sum_db = 0.0f;
 
-    for (int i = 0; i < N; ++i) {
+    for (int i = 0; i < N; ++i) 
+    {
         float y_pred = w * x[i] + b;
         float error = y_pred - y[i];
         sum_dw += (2.0f / N) * error * x[i];
         sum_db += (2.0f / N) * error;
     }
+
     grad_w = sum_dw;
     grad_b = sum_db;
 }
@@ -58,9 +61,11 @@ The GPU implementation (`computeGradientsKernel`) assigns each data sample $i$ t
 ```cpp
 __global__ void computeGradientsKernel(const float* x, const float* y, 
                                        float w, float b, 
-                                       float* grad_w, float* grad_b, int N) {
+                                       float* grad_w, float* grad_b, int N) 
+{
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < N) {
+    if (idx < N) 
+    {
         float x_val = x[idx];
         float y_true = y[idx];
         float y_pred = w * x_val + b;
