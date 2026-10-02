@@ -23,9 +23,6 @@ void computeGradientsCPU(const std::vector<float>& x, const std::vector<float>& 
     grad_b = sum_db;
 }
 
-// -------------------------------------------------------------------------
-// CUDA Kernel: Compute gradients for w and b across N samples
-// -------------------------------------------------------------------------
 __global__ void computeGradientsKernel(const float* x, const float* y, 
                                        float w, float b, 
                                        float* grad_w, float* grad_b, 
@@ -111,7 +108,7 @@ int main() {
     int threadsPerBlock = 256;
     int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
 
-    // Use CUDA events for precise GPU timing
+    // CUDA event GPU timing
     cudaEvent_t start_evt, stop_evt;
     cudaEventCreate(&start_evt);
     cudaEventCreate(&stop_evt);
